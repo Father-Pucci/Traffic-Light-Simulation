@@ -34,7 +34,7 @@ const char* FIRESTORE_URL =
     "/databases/(default)/documents/Traffic_led/control";
 
 // ─── Poll interval (ms) ──────────────────────────────────────────────────────
-const unsigned long POLL_MS = 400;
+const unsigned long POLL_MS = 300;
 
 // ─── GPIO pin definitions ────────────────────────────────────────────────────
 // LEFT road traffic light

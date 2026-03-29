@@ -23,23 +23,45 @@ const CW = 720, CH = 600;
 // ════════════════════════════════════════════════════════════════
 // ROAD GEOMETRY
 // ════════════════════════════════════════════════════════════════
-const LANE    = 20;             // single lane width (px)
-const ROAD_HH = LANE * 4 + 6;  // horizontal road total height
-const ROAD_VW = LANE * 4 + 6;  // vertical road total width
+const LANE    = 22;             // single lane width (px)
+const ROAD_HH = LANE * 4 + 8;  // horizontal road total height (4 lanes + median gap)
+const ROAD_VW = LANE * 4 + 8;  // vertical road total width
 
-const HMID = 230;   // y-center of horizontal road
-const VMID = 440;   // x-center of vertical road
+// Centered positions — T-junction sits more in the middle of the canvas
+const HMID = 255;   // y-center of horizontal road
+const VMID = 390;   // x-center of vertical road
 
 const HY1 = HMID - ROAD_HH / 2;   // top edge of horizontal road
 const HY2 = HMID + ROAD_HH / 2;   // bottom edge of horizontal road
 const VX1 = VMID - ROAD_VW / 2;   // left edge of vertical road
 const VX2 = VMID + ROAD_VW / 2;   // right edge of vertical road
 
-/** Y-center of a horizontal lane (0-1 → RIGHT, 2-3 → LEFT) */
-function hLY(i) { return HMID + [-LANE*1.5-3, -LANE*0.5-1, LANE*0.5+1, LANE*1.5+3][i]; }
+// ── Lane centre helpers ───────────────────────────────────────────
+//
+// HORIZONTAL ROAD — matching your diagram orientation:
+//   TOP half of road    = cars going LEFT  (←)  lanes 0, 1
+//   BOTTOM half of road = cars going RIGHT (→)  lanes 2, 3
+//
+//   Lane 0 = outer top    (← traffic, far from median)
+//   Lane 1 = inner top    (← traffic, KEEP-RIGHT = inner = hLY(1), closest to median)
+//   Lane 2 = inner bottom (→ traffic, KEEP-RIGHT = inner = hLY(2), closest to median)
+//   Lane 3 = outer bottom (→ traffic, far from median)
+//
+// A car coming from the LEFT  and going RIGHT uses the BOTTOM half = hLY(2) or hLY(3)
+//   Keep-right for → = hLY(2)  (inner bottom, closest to the yellow median)
+// A car coming from the RIGHT and going LEFT  uses the TOP half = hLY(0) or hLY(1)
+//   Keep-right for ← = hLY(1)  (inner top, closest to the yellow median)
+//
+// This matches your diagram where:
+//   top arrow goes ←  (right-side origin)
+//   bottom arrow goes → (left-side origin)
+function hLY(i) { return HMID + [-LANE*1.5-4, -LANE*0.5-2, LANE*0.5+2, LANE*1.5+4][i]; }
 
-/** X-center of a vertical lane (0-1 → DOWN, 2-3 → UP) */
-function vLX(i) { return VMID + [-LANE*1.5-3, -LANE*0.5-1, LANE*0.5+1, LANE*1.5+3][i]; }
+// VERTICAL ROAD (below junction, cars come UP from bottom):
+//   LEFT  half (vLX 0,1) = cars going DOWN ↓  (not used — T-junction has no top)
+//   RIGHT half (vLX 2,3) = cars going UP   ↑  (KEEP-RIGHT for ↑ = right half)
+//   Keep-right for ↑ = vLX(2) inner-right, vLX(3) outer-right
+function vLX(i) { return VMID + [-LANE*1.5-4, -LANE*0.5-2, LANE*0.5+2, LANE*1.5+4][i]; }
 
 // ── Crosswalk placement ──────────────────────────────────────────
 // CW_MARGIN = distance from intersection box edge to the NEAR edge of the stripe.
@@ -298,53 +320,60 @@ const CTYPES = [
 ];
 
 // ════════════════════════════════════════════════════════════════
-// CAR ROUTES
+// CAR ROUTES  — KEEP-RIGHT RULE (matches your diagram)
 //
-// DESIGN:
-//   - Every route has a stopX or stopY that sits BEFORE the crosswalk.
-//   - lightGo is a live closure — reads ps at call time.
-//   - Each arm has its own independent lightGo function.
-//   - The first waypoint IS the stop line coordinate, so the car
-//     smoothly decelerates to that exact point when light is red.
-//   - weight controls spawn frequency (straight > turn).
+// HORIZONTAL ROAD orientation (from your diagram):
+//   TOP half (hLY 0,1)    = going LEFT ←   (cars from right side)
+//   BOTTOM half (hLY 2,3) = going RIGHT →  (cars from left side)
+//
+// KEEP-RIGHT means use the lane closest to the centre median:
+//   Cars going → use hLY(2)  (inner bottom, just below yellow median)
+//   Cars going ← use hLY(1)  (inner top,    just above yellow median)
+//
+// VERTICAL ROAD:
+//   Cars going ↑ use right half: vLX(2) and vLX(3)
+//
+// TURNS:
+//   Left arm → turn ↓: enters hLY(2), pivots down into vLX(1) [left↓ lane]
+//   Right arm → turn ↓: enters hLY(1), pivots down into vLX(0) [left↓ lane]
+//   Mid arm → turn ←: vLX(2) goes ↑, exits onto hLY(1) [← lane]
+//   Mid arm → turn →: vLX(3) goes ↑, exits onto hLY(2) [→ lane]
 // ════════════════════════════════════════════════════════════════
 function makeRoutes() {
     return [
-        // ── LEFT ARM → straight RIGHT ───────────────────────────
-        { sx:-60, sy:hLY(0), dir:'r', stopX:STOP_L, lightGo:()=>L.leftGo(), weight:3,
-          wps:[{x:STOP_L,y:hLY(0)},{x:CW+60,y:hLY(0)}] },
-        { sx:-60, sy:hLY(1), dir:'r', stopX:STOP_L, lightGo:()=>L.leftGo(), weight:3,
-          wps:[{x:STOP_L,y:hLY(1)},{x:CW+60,y:hLY(1)}] },
+        // ── LEFT ARM (spawn x=-60) → straight RIGHT ──────────────
+        // Diagram 3: car comes from left, stays in bottom half (→), keep-right = hLY(2)
+        { sx:-60, sy:hLY(2), dir:'r', stopX:STOP_L, lightGo:()=>L.leftGo(), weight:5,
+          wps:[{x:STOP_L, y:hLY(2)}, {x:CW+60, y:hLY(2)}] },
 
-        // ── LEFT ARM → turn DOWN into vertical road ──────────────
-        { sx:-60, sy:hLY(0), dir:'r', stopX:STOP_L, lightGo:()=>L.leftGo(), weight:1,
-          wps:[{x:STOP_L,y:hLY(0)},{x:vLX(0),y:hLY(0)},{x:vLX(0),y:CH+60}] },
-        { sx:-60, sy:hLY(1), dir:'r', stopX:STOP_L, lightGo:()=>L.leftGo(), weight:1,
-          wps:[{x:STOP_L,y:hLY(1)},{x:vLX(1),y:hLY(1)},{x:vLX(1),y:CH+60}] },
+        // ── LEFT ARM → turn DOWN into middle road ─────────────────
+        // Diagram 1: car from left, turns ↓ into vertical road
+        // Travels on hLY(2), then turns into left↓ side of vertical = vLX(1)
+        { sx:-60, sy:hLY(2), dir:'r', stopX:STOP_L, lightGo:()=>L.leftGo(), weight:2,
+          wps:[{x:STOP_L, y:hLY(2)}, {x:vLX(1), y:hLY(2)}, {x:vLX(1), y:CH+60}] },
 
-        // ── RIGHT ARM → straight LEFT ───────────────────────────
-        { sx:CW+60, sy:hLY(2), dir:'l', stopX:STOP_R, lightGo:()=>L.rightGo(), weight:3,
-          wps:[{x:STOP_R,y:hLY(2)},{x:-60,y:hLY(2)}] },
-        { sx:CW+60, sy:hLY(3), dir:'l', stopX:STOP_R, lightGo:()=>L.rightGo(), weight:3,
-          wps:[{x:STOP_R,y:hLY(3)},{x:-60,y:hLY(3)}] },
+        // ── RIGHT ARM (spawn x=CW+60) → straight LEFT ────────────
+        // Diagram 3: car comes from right, stays in top half (←), keep-right = hLY(1)
+        { sx:CW+60, sy:hLY(1), dir:'l', stopX:STOP_R, lightGo:()=>L.rightGo(), weight:5,
+          wps:[{x:STOP_R, y:hLY(1)}, {x:-60, y:hLY(1)}] },
 
-        // ── RIGHT ARM → turn DOWN into vertical road ─────────────
-        { sx:CW+60, sy:hLY(2), dir:'l', stopX:STOP_R, lightGo:()=>L.rightGo(), weight:1,
-          wps:[{x:STOP_R,y:hLY(2)},{x:vLX(2),y:hLY(2)},{x:vLX(2),y:CH+60}] },
-        { sx:CW+60, sy:hLY(3), dir:'l', stopX:STOP_R, lightGo:()=>L.rightGo(), weight:1,
-          wps:[{x:STOP_R,y:hLY(3)},{x:vLX(3),y:hLY(3)},{x:vLX(3),y:CH+60}] },
+        // ── RIGHT ARM → turn DOWN into middle road ────────────────
+        // Diagram 2: car from right, turns ↓ into vertical road
+        // Travels on hLY(1), then turns into left↓ side = vLX(0)
+        { sx:CW+60, sy:hLY(1), dir:'l', stopX:STOP_R, lightGo:()=>L.rightGo(), weight:2,
+          wps:[{x:STOP_R, y:hLY(1)}, {x:vLX(0), y:hLY(1)}, {x:vLX(0), y:CH+60}] },
 
-        // ── MIDDLE ARM → turn LEFT (emerge from bottom, go left) ─
-        { sx:vLX(0), sy:CH+60, dir:'u', stopY:STOP_M, lightGo:()=>L.midGo(), weight:2,
-          wps:[{x:vLX(0),y:STOP_M},{x:vLX(0),y:hLY(3)},{x:-60,y:hLY(3)}] },
-        { sx:vLX(1), sy:CH+60, dir:'u', stopY:STOP_M, lightGo:()=>L.midGo(), weight:2,
-          wps:[{x:vLX(1),y:STOP_M},{x:vLX(1),y:hLY(2)},{x:-60,y:hLY(2)}] },
+        // ── MIDDLE ARM (spawn bottom) → turn LEFT ─────────────────
+        // Diagram 1 & 2: car from bottom goes ↑, exits ← onto top half = hLY(1)
+        // Keep-right going ↑ = right half of vertical = vLX(2)
+        { sx:vLX(2), sy:CH+60, dir:'u', stopY:STOP_M, lightGo:()=>L.midGo(), weight:3,
+          wps:[{x:vLX(2), y:STOP_M}, {x:vLX(2), y:hLY(1)}, {x:-60, y:hLY(1)}] },
 
-        // ── MIDDLE ARM → turn RIGHT ──────────────────────────────
-        { sx:vLX(2), sy:CH+60, dir:'u', stopY:STOP_M, lightGo:()=>L.midGo(), weight:2,
-          wps:[{x:vLX(2),y:STOP_M},{x:vLX(2),y:hLY(0)},{x:CW+60,y:hLY(0)}] },
-        { sx:vLX(3), sy:CH+60, dir:'u', stopY:STOP_M, lightGo:()=>L.midGo(), weight:2,
-          wps:[{x:vLX(3),y:STOP_M},{x:vLX(3),y:hLY(1)},{x:CW+60,y:hLY(1)}] },
+        // ── MIDDLE ARM → turn RIGHT ───────────────────────────────
+        // Car from bottom goes ↑, exits → onto bottom half = hLY(2)
+        // Keep-right going ↑ = right half = vLX(3)
+        { sx:vLX(3), sy:CH+60, dir:'u', stopY:STOP_M, lightGo:()=>L.midGo(), weight:3,
+          wps:[{x:vLX(3), y:STOP_M}, {x:vLX(3), y:hLY(2)}, {x:CW+60, y:hLY(2)}] },
     ];
 }
 
@@ -579,29 +608,29 @@ function updatePeds(dt) {
 // DRAW ROAD
 // ════════════════════════════════════════════════════════════════
 function drawRoad() {
-    // Grass / ground
-    ctx.fillStyle = '#0a2010';
+    // Grass / ground — warm green
+    ctx.fillStyle = '#2a4e14';
     ctx.fillRect(0, 0, CW, CH);
 
-    // Horizontal road body
-    ctx.fillStyle = '#1a1a2e';
+    // Horizontal road body — warm asphalt
+    ctx.fillStyle = '#4a4540';
     ctx.fillRect(0, HY1, CW, ROAD_HH);
 
-    // Vertical road body (below intersection)
-    ctx.fillStyle = '#1a1a2e';
+    // Vertical road body
+    ctx.fillStyle = '#4a4540';
     ctx.fillRect(VX1, HY2, ROAD_VW, CH - HY2);
 
-    // Intersection box (slightly darker)
-    ctx.fillStyle = '#151525';
+    // Intersection box — slightly lighter
+    ctx.fillStyle = '#3e3a36';
     ctx.fillRect(VX1, HY1, ROAD_VW, ROAD_HH);
 
-    // ── Sidewalks ─────────────────────────────────────────────
-    ctx.fillStyle = '#232852';
-    ctx.fillRect(0,    HY1 - 13, CW, 13);          // top
-    ctx.fillRect(0,    HY2,      VX1 - 9, 13);     // bottom left
-    ctx.fillRect(VX2 + 9, HY2,  CW - VX2 - 9, 13);// bottom right
-    ctx.fillRect(VX1 - 13, HY2, 13, CH - HY2);    // vert left
-    ctx.fillRect(VX2,      HY2, 13, CH - HY2);    // vert right
+    // ── Sidewalks — warm sandy ─────────────────────────────────
+    ctx.fillStyle = '#c8b882';
+    ctx.fillRect(0,    HY1 - 13, CW, 13);
+    ctx.fillRect(0,    HY2,      VX1 - 9, 13);
+    ctx.fillRect(VX2 + 9, HY2,  CW - VX2 - 9, 13);
+    ctx.fillRect(VX1 - 13, HY2, 13, CH - HY2);
+    ctx.fillRect(VX2,      HY2, 13, CH - HY2);
 
     // ── Crosswalk stripes ─────────────────────────────────────
     // Left crosswalk  (vertical stripes across horizontal road)
@@ -612,8 +641,8 @@ function drawRoad() {
     drawCWStripes('h', VX1, CWM_Y, ROAD_VW, CW_STRIPE, L.walkM());
 
     // ── Double-yellow medians ──────────────────────────────────
-    ctx.strokeStyle = '#ffd60077';
-    ctx.lineWidth   = 1.5;
+    ctx.strokeStyle = '#f5c400';
+    ctx.lineWidth   = 2.2;
     ctx.setLineDash([]);
 
     ctx.beginPath();
@@ -670,23 +699,21 @@ function drawRoad() {
     ctx.moveTo(VX1, STOP_M); ctx.lineTo(VX2, STOP_M);   // mid arm
     ctx.stroke();
 
-    // ── Direction arrows ──────────────────────────────────────
-    ctx.fillStyle = '#ffffff14';
-    dArrow(70,      hLY(0),   1,  0);
-    dArrow(70,      hLY(1),   1,  0);
-    dArrow(CW - 70, hLY(2),  -1,  0);
-    dArrow(CW - 70, hLY(3),  -1,  0);
-    dArrow(vLX(0),  CH - 55,  0, -1);
-    dArrow(vLX(1),  CH - 55,  0, -1);
+    // ── Direction arrows — lanes actually used ────────────────
+    ctx.fillStyle = '#00000030';
+    dArrow(80,      hLY(2),   1,  0);   // left arm  → on bottom half (hLY 2)
+    dArrow(CW - 80, hLY(1),  -1,  0);  // right arm ← on top half    (hLY 1)
+    dArrow(vLX(2),  CH - 55,  0, -1);  // mid arm   ↑ right half
+    dArrow(vLX(3),  CH - 55,  0, -1);  // mid arm   ↑ right half
 
     // ── Labels ────────────────────────────────────────────────
     ctx.font      = 'bold 8px "Share Tech Mono"';
     ctx.fillStyle = '#ffffff22';
     ctx.textAlign = 'center';
-    ctx.fillText('LEFT ROAD',  90,      HY1 - 2);
-    ctx.fillText('RIGHT ROAD', CW - 90, HY1 - 2);
+    ctx.fillText('← LEFT ROAD',  120,     HY1 - 2);
+    ctx.fillText('RIGHT ROAD →', CW - 90, HY1 - 2);
     ctx.save();
-    ctx.translate(VX1 - 2, HY2 + 65);
+    ctx.translate(VX1 - 2, HY2 + 70);
     ctx.rotate(-Math.PI / 2);
     ctx.fillText('MIDDLE ROAD', 0, 0);
     ctx.restore();
@@ -703,13 +730,13 @@ function drawCWStripes(axis, cx_or_x1, cy_or_y1, w, h, lit) {
     else              { bx = cx_or_x1;           by = cy_or_y1 - h / 2; }
 
     const n  = 5;
-    ctx.fillStyle = lit ? '#ffffff24' : '#ffffff0d';
+    ctx.fillStyle = lit ? '#ffffff26' : '#ffffff0e';
     for (let i = 0; i < n; i++) {
         if (axis === 'v') ctx.fillRect(bx + i * (w / n) + 1, by, w / n - 2, h);
         else              ctx.fillRect(bx, by + i * (h / n) + 1, w, h / n - 2);
     }
     if (lit) {
-        ctx.fillStyle = '#2979ff18';
+        ctx.fillStyle = '#1a73e822';
         ctx.fillRect(bx, by, w, h);
     }
 }
