@@ -1,25 +1,25 @@
-#🚦 Traffic Light Simulation (T-Junction) with ESP32 + Firebase
+# 🚦 Traffic Light Simulation (T-Junction) with ESP32 + Firebase V6.00
 
-##A web-based traffic light simulation system integrated with ESP32 hardware using Firebase Firestore as the real-time bridge.
+## A web-based traffic light simulation system integrated with ESP32 hardware using Firebase Firestore as the real-time bridge.
 
-##This project simulates a T-junction traffic system where a browser-based frontend controls actual LED traffic lights connected to an ESP32.
+## This project simulates a T-junction traffic system where a browser-based frontend controls actual LED traffic lights connected to an ESP32.
 
-#📌 Project Overview
+### 📌 Project Overview
 
-This system consists of three main components:
+### This system consists of three main components:
 
-🌐 Frontend (PHP + JS + CSS)
+### 🌐 Frontend (PHP + JS + CSS)
 A web interface that simulates traffic light behavior and sends updates.
-☁️ Firebase Firestore
+### ☁️ Firebase Firestore
 Acts as a real-time database to store traffic states.
-⚡ ESP32 Microcontroller
+### ⚡ ESP32 Microcontroller
 Fetches data from Firebase and controls physical LEDs accordingly.
 🧠 How It Works
 The web app updates traffic light states in Firebase.
 
 Firebase stores the state in:
 
-Collection: Traffic_led  
+### Collection: Traffic_led  
 Document: control
 The ESP32 continuously polls Firebase.
 LED outputs change based on Firestore values (binary: 0 or 1).
@@ -80,21 +80,21 @@ Each pin uses:
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-▶️ How to Run
-1. Setup XAMPP
+## ▶️ How to Run
+### 1. Setup XAMPP
 
 Place project inside:
 
 xampp/htdocs/firebase/
 Start Apache
-2. Configure Firebase
+### 2. Configure Firebase
 Create Firestore database
 
 Add:
 
 Traffic_led/control
 Insert fields for each LED pin
-3. Upload Code to ESP32
+### 3. Upload Code to ESP32
 
 Update WiFi credentials:
 
