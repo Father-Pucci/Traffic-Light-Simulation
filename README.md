@@ -1,4 +1,4 @@
-# 🚦 Traffic Light Simulation (T-Junction) with ESP32 + Firebase V6.00
+# 🚦 Traffic Light Simulation (T-Junction) with ESP32 + Firebase V6.3
 
 ## A web-based traffic light simulation system integrated with ESP32 hardware using Firebase Firestore as the real-time bridge.
 
