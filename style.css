@@ -1,0 +1,404 @@
+/*
+ * style.css — TrafficOS T-Junction Dashboard
+ * Exo 2 (UI text) + Share Tech Mono (labels/code)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap');
+
+/* ── Variables ─────────────────────────────────────────────────────────── */
+:root {
+    --bg:      #050a0f;
+    --panel:   #0a141e;
+    --panel2:  #0d1a26;
+    --border:  #1a3a5c;
+    --accent:  #00e5ff;
+    --accent2: #ff6b00;
+    --green:   #00ff88;
+    --yellow:  #ffd600;
+    --red:     #ff2244;
+    --blue:    #2979ff;
+    --dim:     #1e3a52;
+    --text:    #c8e6ff;
+    --textdim: #4a7a9b;
+    --mono:    'Share Tech Mono', monospace;
+    --sans:    'Exo 2', sans-serif;
+}
+
+/* ── Reset & base ──────────────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+    background-image:
+        radial-gradient(ellipse 80% 40% at 50% 0%, #00e5ff08, transparent 70%),
+        repeating-linear-gradient(0deg,   transparent 39px, #0a1a2a 40px),
+        repeating-linear-gradient(90deg,  transparent 39px, #0a1a2a 40px);
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar          { width: 4px; }
+::-webkit-scrollbar-track    { background: var(--panel); }
+::-webkit-scrollbar-thumb    { background: var(--dim); border-radius: 2px; }
+
+/* ── Header ────────────────────────────────────────────────────────────── */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 26px;
+    border-bottom: 1px solid var(--border);
+    background: #050a0fee;
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.logo {
+    font-family: var(--mono);
+    font-size: 1.2rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-shadow: 0 0 20px var(--accent);
+}
+.logo .acc  { color: var(--accent2); }
+.logo .dim  { color: var(--textdim); font-size: .72rem; }
+
+.status-bar {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: .7rem;
+    color: var(--textdim);
+}
+
+.status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+.time-display { font-family: var(--mono); color: var(--accent); font-size: .82rem; }
+
+.fb-status {
+    font-family: var(--mono);
+    font-size: .58rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--textdim);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.fb-dot { width:6px;height:6px;border-radius:50%;background:var(--textdim); }
+.fb-dot.ok  { background:var(--green); box-shadow:0 0 5px var(--green); }
+.fb-dot.err { background:var(--red);   box-shadow:0 0 5px var(--red);   }
+
+/* ── Main 3-column grid ────────────────────────────────────────────────── */
+.main-layout {
+    display: grid;
+    grid-template-columns: 248px 1fr 248px;
+    min-height: calc(100vh - 58px);
+}
+
+/* ── Side panels ────────────────────────────────────────────────────────── */
+.side-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    overflow-y: auto;
+}
+.side-panel.right { border-right: none; border-left: 1px solid var(--border); }
+
+.panel-title {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: 3px;
+    color: var(--textdim);
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+}
+
+.divider { height: 1px; background: var(--border); margin: 1px 0; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn-group { display: flex; flex-direction: column; gap: 7px; }
+
+.btn {
+    padding: 9px 11px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all .18s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+.btn:active { transform: scale(.97); }
+
+.btn-start  { border-color:var(--green);  color:var(--green);  }
+.btn-start:hover  { background: #00ff8815; }
+.btn-stop   { border-color:var(--red);    color:var(--red);    }
+.btn-stop:hover   { background: #ff224415; }
+.btn-emergency {
+    border-color: var(--red);
+    color: var(--red);
+    background: #1a0008;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+.btn-emergency.active { animation: eb .4s infinite; }
+@keyframes eb { 0%,100%{background:#1a0008} 50%{background:#ff224430} }
+
+/* ── Traffic-light widget ────────────────────────────────────────────────── */
+.tl-widget {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px;
+}
+.tl-label {
+    font-size: .64rem;
+    color: var(--textdim);
+    font-family: var(--mono);
+    margin-bottom: 8px;
+}
+.tl-lights { display:flex; gap:9px; justify-content:center; margin-bottom:6px; }
+
+.tl-bulb {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid #333;
+    transition: all .25s;
+}
+.tl-bulb.r  { background:#3a0010; }
+.tl-bulb.y  { background:#3a2a00; }
+.tl-bulb.g  { background:#003a15; }
+.tl-bulb.b  { background:#001a3a; }
+
+.tl-bulb.r.on { background:var(--red);    border-color:#ff4466; box-shadow:0 0 14px var(--red),   0 0 28px #ff224440; }
+.tl-bulb.y.on { background:var(--yellow); border-color:#ffe033; box-shadow:0 0 14px var(--yellow),0 0 28px #ffd60040; }
+.tl-bulb.g.on { background:var(--green);  border-color:#33ffaa; box-shadow:0 0 14px var(--green), 0 0 28px #00ff8840; }
+.tl-bulb.b.on { background:var(--blue);   border-color:#5599ff; box-shadow:0 0 14px var(--blue),  0 0 28px #2979ff40; }
+
+.tl-phase-text {
+    font-family: var(--mono);
+    font-size: .6rem;
+    text-align: center;
+    color: var(--textdim);
+}
+
+.phase-bar { height:4px; background:var(--dim); border-radius:2px; overflow:hidden; margin-top:5px; }
+.phase-bar-fill { height:100%; background:var(--accent); transition:width .08s linear; border-radius:2px; }
+
+/* ── Phase timing editor ─────────────────────────────────────────────────── */
+.seq-editor {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px;
+}
+.seq-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 5px;
+    font-family: var(--mono);
+    font-size: .59rem;
+    color: var(--textdim);
+}
+.seq-row label { width: 78px; }
+.seq-row input[type=number] {
+    width: 46px;
+    background: var(--dim);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: .59rem;
+    padding: 3px 5px;
+    outline: none;
+}
+.seq-row input[type=number]:focus { border-color: var(--accent); }
+
+/* ── Speed slider ────────────────────────────────────────────────────────── */
+.slider-wrap { display:flex; flex-direction:column; gap:5px; }
+.slider-label {
+    font-family: var(--mono);
+    font-size: .6rem;
+    color: var(--textdim);
+    display: flex;
+    justify-content: space-between;
+}
+input[type=range] {
+    -webkit-appearance: none;
+    width: 100%; height: 4px;
+    background: var(--dim);
+    border-radius: 2px;
+    outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 6px var(--accent);
+}
+
+/* ── Stats grid ──────────────────────────────────────────────────────────── */
+.stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.stat-box {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 6px;
+    text-align: center;
+}
+.stat-val { font-family:var(--mono); font-size:1.2rem; color:var(--accent); line-height:1; }
+.stat-lbl { font-size:.55rem; color:var(--textdim); letter-spacing:1px; margin-top:2px; }
+
+/* ── Walk countdown badge ────────────────────────────────────────────────── */
+.walk-badge {
+    font-family: var(--mono);
+    font-size: .6rem;
+    background: #001a3a;
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    border-radius: 5px;
+    padding: 6px 9px;
+    text-align: center;
+    letter-spacing: 1px;
+    animation: walkPulse .9s infinite;
+}
+@keyframes walkPulse {
+    0%,100%{ box-shadow: 0 0 5px #2979ff44; }
+    50%    { box-shadow: 0 0 16px #2979ffaa; }
+}
+
+/* ── Phase log ───────────────────────────────────────────────────────────── */
+.phase-log-box {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: .55rem;
+    max-height: 100px;
+    overflow-y: auto;
+    color: var(--textdim);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.log-entry .log-time { color: var(--accent); }
+
+/* ── Manual pin grid ─────────────────────────────────────────────────────── */
+.pin-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.pin-warn { font-family:var(--mono); font-size:.53rem; color:var(--red); margin-bottom:3px; }
+
+.pin-btn {
+    padding: 6px 4px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--textdim);
+    font-family: var(--mono);
+    font-size: .54rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all .18s;
+    text-align: center;
+}
+.pin-btn:hover { border-color:var(--accent); color:var(--accent); }
+.pin-btn.on {
+    background: #00ff8815;
+    border-color: var(--green);
+    color: var(--green);
+    box-shadow: 0 0 7px #00ff8820;
+}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────────── */
+.tooltip { position: relative; }
+.tooltip:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: 110%; left: 50%;
+    transform: translateX(-50%);
+    background: #0a141e;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: .54rem;
+    white-space: nowrap;
+    font-family: var(--mono);
+    z-index: 99;
+    pointer-events: none;
+}
+
+/* ── Centre simulation area ─────────────────────────────────────────────── */
+.sim-area {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 8px;
+    gap: 9px;
+}
+.sim-title {
+    font-family: var(--mono);
+    font-size: .6rem;
+    letter-spacing: 4px;
+    color: var(--textdim);
+}
+
+canvas#sim {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 0 32px #00e5ff0c;
+    max-width: 100%;
+}
+
+/* ── Phase chips strip ───────────────────────────────────────────────────── */
+.phase-strip { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+
+.phase-chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: .58rem;
+    letter-spacing: 1px;
+    color: var(--textdim);
+    background: var(--panel2);
+    transition: all .2s;
+}
+.phase-chip.al { border-color:var(--green);  color:var(--green);  background:#00ff8810; box-shadow:0 0 8px #00ff8820; }
+.phase-chip.am { border-color:var(--yellow); color:var(--yellow); background:#ffd60010; }
+.phase-chip.ar { border-color:var(--blue);   color:var(--blue);   background:#2979ff10; }
+.phase-chip.ax { border-color:var(--red);    color:var(--red);    background:#ff224410; }
+.phase-chip.aw {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: #2979ff20;
+    animation: walkPulse .8s infinite;
+}
