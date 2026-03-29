@@ -1,10 +1,10 @@
-🚦 Traffic Light Simulation (T-Junction) with ESP32 + Firebase
+#🚦 Traffic Light Simulation (T-Junction) with ESP32 + Firebase
 
-A web-based traffic light simulation system integrated with ESP32 hardware using Firebase Firestore as the real-time bridge.
+##A web-based traffic light simulation system integrated with ESP32 hardware using Firebase Firestore as the real-time bridge.
 
-This project simulates a T-junction traffic system where a browser-based frontend controls actual LED traffic lights connected to an ESP32.
+##This project simulates a T-junction traffic system where a browser-based frontend controls actual LED traffic lights connected to an ESP32.
 
-📌 Project Overview
+#📌 Project Overview
 
 This system consists of three main components:
 
